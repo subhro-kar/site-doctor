@@ -29,6 +29,8 @@ program
   .option("--open-files", "Open source files with critical/high issues in the editor", false)
   .action(async (options) => {
     try {
+      console.log(`site-doctor: auditing ${options.url}\n`);
+
       const config = buildConfig({
         url: options.url,
         maxPages: Number(options.maxPages),
