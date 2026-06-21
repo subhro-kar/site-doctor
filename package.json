@@ -28,11 +28,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yourusername/site-doctor.git"
+    "url": "git+https://github.com/subhro-kar/site-doctor.git"
   },
-  "homepage": "https://github.com/yourusername/site-doctor#readme",
+  "homepage": "https://github.com/subhro-kar/site-doctor#readme",
   "bugs": {
-    "url": "https://github.com/yourusername/site-doctor/issues"
+    "url": "https://github.com/subhro-kar/site-doctor/issues"
   },
   "packageManager": "pnpm@11.2.2",
   "engines": {
