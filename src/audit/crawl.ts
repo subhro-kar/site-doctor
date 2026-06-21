@@ -3,6 +3,10 @@ import { normalizeUrl, isSameOrigin, isLikelyDownload } from "../utils/url.js";
 import { resolveSourceFile } from "../project/resolve-source-file.js";
 import type { PageData, PageResource, ConsoleMessage as SiteConsoleMessage } from "../types.js";
 
+const chromiumArgs = process.platform === "win32"
+  ? ["--no-sandbox", "--disable-setuid-sandbox", "--disable-features=NetworkService"]
+  : [];
+
 export type CrawlOptions = {
   startUrl: string;
   maxPages: number;
@@ -13,11 +17,11 @@ export async function crawl(options: CrawlOptions): Promise<PageData[]> {
   const { startUrl, maxPages, projectDir } = options;
   const baseOrigin = new URL(startUrl).origin;
 
-  console.log(`Crawling ${startUrl} (max ${maxPages} pages)...`);
+  console.error(`Crawling ${startUrl} (max ${maxPages} pages)...`);
 
   const browser = await chromium.launch({
     headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-features=NetworkService"],
+    args: chromiumArgs,
   });
   const context = await browser.newContext();
   const page = await context.newPage();
@@ -40,7 +44,7 @@ export async function crawl(options: CrawlOptions): Promise<PageData[]> {
           pageData.sourceFile = resolveSourceFile(projectDir, urlPath);
         }
         pages.push(pageData);
-        console.log(`  [${pages.length}/${maxPages}] ${pageData.statusCode} ${pageData.finalUrl}`);
+        console.error(`  [${pages.length}/${maxPages}] ${pageData.statusCode} ${pageData.finalUrl}`);
 
         if (isFirstPage && pageData.statusCode === 0) {
           const navError = pageData.pageErrors.find((e) => e.name === "NavigationError");
@@ -66,7 +70,7 @@ export async function crawl(options: CrawlOptions): Promise<PageData[]> {
     await browser.close();
   }
 
-  console.log(`Crawled ${pages.length} page(s).\n`);
+  console.error(`Crawled ${pages.length} page(s).\n`);
   return pages;
 }
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { Command } from "commander";
 import open from "open";
+import { createRequire } from "node:module";
 import { buildConfig, formatValidationError } from "./config.js";
 import { runAudit } from "./audit/index.js";
 import { printTerminalReport } from "./report/terminal.js";
@@ -8,12 +9,15 @@ import { generateHtmlReport } from "./report/html.js";
 import { createEditorLink } from "./project/resolve-source-file.js";
 import type { AuditResult } from "./types.js";
 
+const require = createRequire(import.meta.url);
+const pkg = require("../package.json") as { version: string };
+
 const program = new Command();
 
 program
   .name("site-doctor")
   .description("Audit rendered websites for broken links, images, a11y, and more.")
-  .version("0.1.0");
+  .version(pkg.version);
 
 program
   .command("audit")
@@ -29,7 +33,7 @@ program
   .option("--open-files", "Open source files with critical/high issues in the editor", false)
   .action(async (options) => {
     try {
-      console.log(`site-doctor: auditing ${options.url}\n`);
+      console.error(`site-doctor: auditing ${options.url}\n`);
 
       const config = buildConfig({
         url: options.url,
