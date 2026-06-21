@@ -1,0 +1,45 @@
+{
+  "name": "site-doctor",
+  "version": "0.1.0",
+  "description": "A reusable CLI for auditing rendered websites.",
+  "type": "module",
+  "main": "dist/cli.js",
+  "bin": {
+    "site-doctor": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "prepublishOnly": "pnpm build"
+  },
+  "keywords": [
+    "audit",
+    "nextjs",
+    "accessibility",
+    "seo",
+    "security",
+    "cli"
+  ],
+  "license": "MIT",
+  "packageManager": "pnpm@11.2.2",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@axe-core/playwright": "4.10.1",
+    "commander": "13.1.0",
+    "open": "10.2.0",
+    "playwright": "1.52.0",
+    "undici": "7.8.0",
+    "zod": "3.25.73"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.16",
+    "typescript": "5.8.3"
+  }
+}
