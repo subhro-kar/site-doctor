@@ -26,7 +26,12 @@ export async function runAudit(
 
   const getPage = async (): Promise<Page> => {
     if (!context) {
-      browser = await chromium.launch({ headless: true });
+      browser = await chromium.launch({
+        headless: true,
+        args: process.platform === "win32"
+          ? ["--no-sandbox", "--disable-setuid-sandbox", "--disable-features=NetworkService"]
+          : [],
+      });
       context = await browser.newContext();
     }
     return await context.newPage();
@@ -37,6 +42,8 @@ export async function runAudit(
   };
 
   try {
+    console.error("Running audit checks...");
+
     const issueGroups = await Promise.all([
       checkLinks(pages, config),
       checkImages(pages, config),
@@ -49,6 +56,8 @@ export async function runAudit(
     ]);
 
     const issues = deduplicateIssues(issueGroups.flat());
+
+    console.error(`Found ${issues.length} issue(s).\n`);
 
     return {
       config,
