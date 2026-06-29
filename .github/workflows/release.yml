@@ -18,18 +18,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-
-      - run: npm install -g npm@latest
+          registry-url: 'https://registry.npmjs.org'
 
       - uses: pnpm/action-setup@v4
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
 
-      - name: Configure npm registry
-        run: echo "registry=https://registry.npmjs.org/" > ~/.npmrc
-
       - run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - run: gh release create "${GITHUB_REF_NAME}" --generate-notes
         env:
