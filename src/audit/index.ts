@@ -8,6 +8,7 @@ import { checkConsoleErrors } from "./console-errors.js";
 import { checkHydrationErrors } from "./hydration-errors.js";
 import { checkMetadata } from "./metadata.js";
 import { checkMixedContent } from "./mixed-content.js";
+import { isBrowserNotInstalledError, installBrowsers } from "../utils/browser.js";
 import type { AuditConfig, AuditResult, Issue, PageData } from "../types.js";
 
 export type RunAuditOptions = {
@@ -26,12 +27,26 @@ export async function runAudit(
 
   const getPage = async (): Promise<Page> => {
     if (!context) {
-      browser = await chromium.launch({
-        headless: true,
-        args: process.platform === "win32"
-          ? ["--no-sandbox", "--disable-setuid-sandbox", "--disable-features=NetworkService"]
-          : [],
-      });
+      try {
+        browser = await chromium.launch({
+          headless: true,
+          args: process.platform === "win32"
+            ? ["--no-sandbox", "--disable-setuid-sandbox", "--disable-features=NetworkService"]
+            : [],
+        });
+      } catch (error) {
+        if (isBrowserNotInstalledError(error)) {
+          installBrowsers();
+          browser = await chromium.launch({
+            headless: true,
+            args: process.platform === "win32"
+              ? ["--no-sandbox", "--disable-setuid-sandbox", "--disable-features=NetworkService"]
+              : [],
+          });
+        } else {
+          throw error;
+        }
+      }
       context = await browser.newContext();
     }
     return await context.newPage();
