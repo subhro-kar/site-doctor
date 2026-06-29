@@ -1,3 +1,10 @@
+# [0.3.0](https://github.com/subhro-kar/site-doctor/compare/v0.2.0...v0.3.0) (2026-06-29)
+
+
+### Features
+
+* separate release and publish into distinct jobs ([9fd8a4a](https://github.com/subhro-kar/site-doctor/commit/9fd8a4aa52ef9aea52353f3eb2d4e450ae50b33e))
+
 # [0.2.0](https://github.com/subhro-kar/site-doctor/compare/v0.1.6...v0.2.0) (2026-06-29)
 
 
