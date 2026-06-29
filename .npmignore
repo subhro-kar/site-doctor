@@ -1,0 +1,8 @@
+src/
+tsconfig.json
+opencode.json
+.github/
+.pnpm-store/
+*.tsbuildinfo
+*.tgz
+ROADMAP.md

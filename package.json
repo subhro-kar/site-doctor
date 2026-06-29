@@ -1,11 +1,31 @@
 {
   "name": "site-doctor",
   "version": "0.1.6",
-  "description": "A reusable CLI for auditing rendered websites.",
+  "description": "Audit rendered websites for broken links, images, accessibility, SEO, security headers, and more. CLI + MCP server for AI agents.",
   "type": "module",
   "main": "dist/cli.js",
+  "types": "dist/cli.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/cli.d.ts",
+      "import": "./dist/cli.js"
+    },
+    "./audit": {
+      "types": "./dist/audit/index.d.ts",
+      "import": "./dist/audit/index.js"
+    },
+    "./config": {
+      "types": "./dist/config.d.ts",
+      "import": "./dist/config.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js"
+    }
+  },
   "bin": {
-    "site-doctor": "dist/cli.js"
+    "site-doctor": "dist/cli.js",
+    "site-doctor-mcp": "dist/mcp/index.js"
   },
   "files": [
     "dist",
@@ -19,11 +39,24 @@
   },
   "keywords": [
     "audit",
-    "nextjs",
+    "website-audit",
+    "broken-links",
     "accessibility",
+    "a11y",
+    "wcag",
     "seo",
-    "security",
-    "cli"
+    "security-headers",
+    "mixed-content",
+    "hydration",
+    "nextjs",
+    "react",
+    "playwright",
+    "axe-core",
+    "cli",
+    "mcp",
+    "mcp-server",
+    "model-context-protocol",
+    "ai-agent"
   ],
   "license": "MIT",
   "repository": {
@@ -40,6 +73,7 @@
   },
   "dependencies": {
     "@axe-core/playwright": "4.10.1",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "commander": "13.1.0",
     "open": "10.2.0",
     "playwright": "1.52.0",
