@@ -29,12 +29,18 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
 
-      - name: 📦 Semantic Release — version, changelog, tag
+      - name: 📦 Release — version bump, changelog, git tag
+        id: release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx semantic-release
 
       - name: 🚀 Publish to npm
-        run: npm publish --provenance --access public
+        if: steps.release.outcome == 'success'
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "Publishing version $VERSION to npm..."
+          npm publish --provenance --access public
+          echo "Published site-doctor@$VERSION to npm"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
