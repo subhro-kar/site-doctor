@@ -1,3 +1,10 @@
+## [0.3.3](https://github.com/subhro-kar/site-doctor/compare/v0.3.2...v0.3.3) (2026-06-29)
+
+
+### Bug Fixes
+
+* always publish to npm after successful release ([2a5f928](https://github.com/subhro-kar/site-doctor/commit/2a5f928164c4eac3dea9237ab1db7155e8a24717))
+
 ## [0.3.2](https://github.com/subhro-kar/site-doctor/compare/v0.3.1...v0.3.2) (2026-06-29)
 
 
