@@ -11,34 +11,24 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
-    if: "!startsWith(github.event.head_commit.message, 'chore(release):')"
     steps:
       - uses: actions/checkout@b9e0990d219a03df7633c93f6f005a8fecbcab22 # v4
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v4
 
       - uses: actions/setup-node@6a61c0375d66246de94630495909f12cf8dac84d # v4
         with:
           node-version: 24
-          registry-url: 'https://registry.npmjs.org'
+          cache: pnpm
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
 
-      - name: Bump version and create tag
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          NEW_VERSION=$(npm version patch -m "chore(release): %s")
-          git push origin "$NEW_VERSION"
-          echo "TAG=$NEW_VERSION" >> "$GITHUB_ENV"
-
-      - run: npm publish --provenance --access public
+      - name: Release
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - run: gh release create "${{ env.TAG }}" --generate-notes
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npx semantic-release

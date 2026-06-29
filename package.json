@@ -1,6 +1,6 @@
 {
   "name": "site-doctor",
-  "version": "0.1.6",
+  "version": "0.0.0-semantically-released",
   "description": "Audit rendered websites for broken links, images, accessibility, SEO, security headers, and more. CLI + MCP server for AI agents.",
   "type": "module",
   "main": "dist/cli.js",
@@ -35,7 +35,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "prepublishOnly": "pnpm build"
+    "prepublishOnly": "pnpm build",
+    "semantic-release": "semantic-release"
   },
   "keywords": [
     "audit",
@@ -81,7 +82,9 @@
     "zod": "3.25.73"
   },
   "devDependencies": {
+    "@semantic-release/git": "^10.0.1",
     "@types/node": "22.15.16",
+    "semantic-release": "^25.0.5",
     "typescript": "5.8.3"
   }
 }
