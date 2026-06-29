@@ -1,3 +1,10 @@
+## [0.3.2](https://github.com/subhro-kar/site-doctor/compare/v0.3.1...v0.3.2) (2026-06-29)
+
+
+### Bug Fixes
+
+* single job with two labeled steps, semantic-release for versioning only ([5bc80b7](https://github.com/subhro-kar/site-doctor/commit/5bc80b7d46689ebe58b9c6f0b4c66f55b30da93f))
+
 ## [0.3.1](https://github.com/subhro-kar/site-doctor/compare/v0.3.0...v0.3.1) (2026-06-29)
 
 
