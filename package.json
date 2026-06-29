@@ -1,6 +1,6 @@
 {
   "name": "site-doctor",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "A reusable CLI for auditing rendered websites.",
   "type": "module",
   "main": "dist/cli.js",
