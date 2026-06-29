@@ -11,12 +11,41 @@ permissions:
 
 jobs:
   release:
-    name: Release & Publish
+    name: 📦 Release — version, changelog, tag
     runs-on: ubuntu-latest
+    outputs:
+      released: ${{ steps.determine.outputs.released }}
+      version: ${{ steps.determine.outputs.version }}
     steps:
       - uses: actions/checkout@b9e0990d219a03df7633c93f6f005a8fecbcab22 # v4
         with:
           fetch-depth: 0
+
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v4
+
+      - uses: actions/setup-node@6a61c0375d66246de94630495909f12cf8dac84d # v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - name: Semantic Release
+        id: determine
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx semantic-release
+
+  publish:
+    name: 🚀 Publish to npm
+    runs-on: ubuntu-latest
+    needs: release
+    if: needs.release.outputs.released == 'true'
+    steps:
+      - uses: actions/checkout@b9e0990d219a03df7633c93f6f005a8fecbcab22 # v4
+        with:
+          ref: v${{ needs.release.outputs.version }}
 
       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v4
 
@@ -29,13 +58,19 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
 
-      - name: Configure npm authentication
-        run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+      - name: Publish to npm
+        run: npm publish --provenance --access public
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: 📦 Semantic Release — version, changelog, npm publish, GitHub release
+  github-release:
+    name: 📋 GitHub Release
+    runs-on: ubuntu-latest
+    needs: publish
+    steps:
+      - uses: actions/checkout@b9e0990d219a03df7633c93f6f005a8fecbcab22 # v4
+
+      - name: Create GitHub Release
+        run: gh release create "v${{ needs.release.outputs.version }}" --generate-notes
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npx semantic-release
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
