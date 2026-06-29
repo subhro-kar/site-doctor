@@ -16,8 +16,6 @@ jobs:
       - uses: actions/checkout@b9e0990d219a03df7633c93f6f005a8fecbcab22 # v4
 
       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v4
-        with:
-          version: 11
 
       - uses: actions/setup-node@6a61c0375d66246de94630495909f12cf8dac84d # v4
         with:
