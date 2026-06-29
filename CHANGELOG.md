@@ -1,3 +1,12 @@
+## [0.3.4](https://github.com/subhro-kar/site-doctor/compare/v0.3.3...v0.3.4) (2026-06-29)
+
+
+### Bug Fixes
+
+* 3-job pipeline - release then npm publish then github release ([d8d218e](https://github.com/subhro-kar/site-doctor/commit/d8d218e25a0f4e4f8ba9368ef0d38099fab89c7b))
+* single job, semantic-release handles npm publish and github release ([bdf3c9f](https://github.com/subhro-kar/site-doctor/commit/bdf3c9f4bbe3dc5106f337806022b1c376c2c5e8))
+* write .npmrc for semantic-release npm auth ([d22fdeb](https://github.com/subhro-kar/site-doctor/commit/d22fdebee2f4f697f55261680df553a576aa6bc9))
+
 ## [0.3.3](https://github.com/subhro-kar/site-doctor/compare/v0.3.2...v0.3.3) (2026-06-29)
 
 
