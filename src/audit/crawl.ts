@@ -1,5 +1,6 @@
 import { chromium, type Browser, type Page, type ConsoleMessage } from "playwright";
 import { normalizeUrl, isSameOrigin, isLikelyDownload } from "../utils/url.js";
+import { isBrowserNotInstalledError, installBrowsers } from "../utils/browser.js";
 import { resolveSourceFile } from "../project/resolve-source-file.js";
 import type { PageData, PageResource, ConsoleMessage as SiteConsoleMessage } from "../types.js";
 
@@ -19,10 +20,23 @@ export async function crawl(options: CrawlOptions): Promise<PageData[]> {
 
   console.error(`Crawling ${startUrl} (max ${maxPages} pages)...`);
 
-  const browser = await chromium.launch({
-    headless: true,
-    args: chromiumArgs,
-  });
+  let browser: Browser;
+  try {
+    browser = await chromium.launch({
+      headless: true,
+      args: chromiumArgs,
+    });
+  } catch (error) {
+    if (isBrowserNotInstalledError(error)) {
+      installBrowsers();
+      browser = await chromium.launch({
+        headless: true,
+        args: chromiumArgs,
+      });
+    } else {
+      throw error;
+    }
+  }
   const context = await browser.newContext();
   const page = await context.newPage();
 
