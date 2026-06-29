@@ -1,3 +1,11 @@
+## [0.3.1](https://github.com/subhro-kar/site-doctor/compare/v0.3.0...v0.3.1) (2026-06-29)
+
+
+### Bug Fixes
+
+* publish to npm before creating GitHub release ([fe531eb](https://github.com/subhro-kar/site-doctor/commit/fe531ebbfc22c6181c067b48cc0ec2fe2f39ee4a))
+* single release job with labeled steps for version and publish ([81ae6fb](https://github.com/subhro-kar/site-doctor/commit/81ae6fb1ef2aa86537a28a81353776f355280caf))
+
 # [0.3.0](https://github.com/subhro-kar/site-doctor/compare/v0.2.0...v0.3.0) (2026-06-29)
 
 
