@@ -30,3 +30,6 @@ coverage/
 site-doctor-report.html
 report.json
 *.tgz
+
+# Internal docs
+ROADMAP.md
