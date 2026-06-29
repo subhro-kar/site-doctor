@@ -26,8 +26,6 @@ jobs:
       - run: pnpm build
 
       - run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - run: gh release create "${GITHUB_REF_NAME}" --generate-notes
         env:
