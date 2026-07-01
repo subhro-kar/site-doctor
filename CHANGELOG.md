@@ -1,3 +1,10 @@
+# [0.6.0](https://github.com/subhro-kar/site-doctor/compare/v0.5.0...v0.6.0) (2026-07-01)
+
+
+### Features
+
+* add performance check (LCP, CLS, INP, render-blocking, bundle size, DOM size, compression, third-party) ([#9](https://github.com/subhro-kar/site-doctor/issues/9)) ([30d2b64](https://github.com/subhro-kar/site-doctor/commit/30d2b6482f8e5ed3145a3e53ddbca77e87f2edf6))
+
 # [0.5.0](https://github.com/subhro-kar/site-doctor/compare/v0.4.1...v0.5.0) (2026-07-01)
 
 
