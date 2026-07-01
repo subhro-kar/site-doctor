@@ -1,3 +1,10 @@
+# [0.5.0](https://github.com/subhro-kar/site-doctor/compare/v0.4.1...v0.5.0) (2026-07-01)
+
+
+### Features
+
+* release interactive CLI mode, check filtering, and design issues audit ([67a673d](https://github.com/subhro-kar/site-doctor/commit/67a673ddefc88870a1e644ed2dcebdd309cb454f))
+
 ## [0.4.1](https://github.com/subhro-kar/site-doctor/compare/v0.4.0...v0.4.1) (2026-07-01)
 
 

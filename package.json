@@ -1,6 +1,6 @@
 {
   "name": "site-doctor",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "Audit rendered websites for broken links, images, accessibility, SEO, security headers, and more. CLI + MCP server for AI agents.",
   "type": "module",
   "main": "dist/cli.js",
