@@ -23,6 +23,7 @@ const auditOptionsSchema = z.object({
       metadata: z.boolean().default(true),
       mixedContent: z.boolean().default(true),
       designIssues: z.boolean().default(true),
+      performance: z.boolean().default(true),
     })
     .default({}),
 });

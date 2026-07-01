@@ -37,6 +37,7 @@ export type AuditConfig = {
     metadata: boolean;
     mixedContent: boolean;
     designIssues: boolean;
+    performance: boolean;
   };
 };
 
