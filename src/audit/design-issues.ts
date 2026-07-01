@@ -15,9 +15,9 @@ export async function checkDesignIssues(
     const page = await getPage();
     try {
       await page.goto(pageData.url, { waitUntil: "networkidle", timeout: 30000 });
-      const data = await page.evaluate(designAuditScript);
+      const findings = await page.evaluate(collectDesignFindings);
 
-      for (const finding of data) {
+      for (const finding of findings) {
         issues.push({
           id: finding.id,
           severity: finding.severity as Issue["severity"],
@@ -55,49 +55,89 @@ type DesignFinding = {
   suggestion?: string;
 };
 
-const designAuditScript = (): DesignFinding[] => {
-  const findings: DesignFinding[] = [];
+function collectDesignFindings(): DesignFinding[] {
   const allElements = Array.from(document.querySelectorAll("*"));
-
-  // ── Heading Hierarchy ──
-
   const headings = Array.from(document.querySelectorAll("h1,h2,h3,h4,h5,h6"));
   const headingLevels = headings.map((h) => ({
     el: h,
-    level: parseInt(h.tagName[1], 10),
+    level: Number.parseInt(h.tagName[1], 10),
     text: (h as HTMLElement).textContent?.trim() ?? "",
   }));
+  const paragraphs = Array.from(document.querySelectorAll("p, li, td, span"));
+  const bodyFontSize = Number.parseFloat(getComputedStyle(document.body).fontSize);
 
-  if (headingLevels.length > 0) {
-    for (let i = 1; i < headingLevels.length; i++) {
-      const prev = headingLevels[i - 1].level;
-      const curr = headingLevels[i].level;
-      if (curr > prev + 1) {
-        findings.push({
-          id: "skipped-heading-level",
-          severity: "medium",
-          message: `Heading level skipped: h${prev} followed by h${curr}.`,
-          selector: headingLevels[i].el.tagName.toLowerCase() + ":nth-of-type(" + (i + 1) + ")",
-          target: headingLevels[i].text.slice(0, 80) || undefined,
-          suggestion: "Use sequential heading levels (h1 → h2 → h3) for proper document structure.",
-        });
+  const findings: DesignFinding[] = [
+    ...checkHeadingHierarchy(headingLevels),
+    ...checkTypographyScale(headingLevels, bodyFontSize),
+    ...checkTypography(allElements, paragraphs, bodyFontSize),
+    ...checkColorContrast(),
+    ...checkTouchAndInteraction(),
+    ...checkResponsiveLayout(headingLevels),
+  ];
+
+  return findings;
+}
+
+function buildSelector(el: Element): string {
+  const path: string[] = [];
+  let current: Element | null = el;
+  while (current && current !== document.body && current !== document.documentElement) {
+    let selector = current.tagName.toLowerCase();
+    if (current.id) {
+      selector = `#${current.id}`;
+      path.unshift(selector);
+      break;
+    }
+    const parent = current.parentElement;
+    if (parent) {
+      const siblings = Array.from(parent.children).filter(
+        (c) => c.tagName === current!.tagName,
+      );
+      if (siblings.length > 1) {
+        const index = siblings.indexOf(current) + 1;
+        selector += `:nth-of-type(${index})`;
       }
     }
+    path.unshift(selector);
+    current = current.parentElement;
+  }
+  return path.join(" > ");
+}
 
-    const maxLevel = Math.max(...headingLevels.map((h) => h.level));
-    const minLevel = Math.min(...headingLevels.map((h) => h.level));
-    const uniqueLevels = new Set(headingLevels.map((h) => h.level));
-    if (uniqueLevels.size > 4) {
+function checkHeadingHierarchy(
+  headings: { el: Element; level: number; text: string }[],
+): DesignFinding[] {
+  const findings: DesignFinding[] = [];
+  if (headings.length === 0) return findings;
+
+  for (let i = 1; i < headings.length; i++) {
+    const prev = headings[i - 1].level;
+    const curr = headings[i].level;
+    if (curr > prev + 1) {
       findings.push({
-        id: "too-many-heading-levels",
-        severity: "low",
-        message: `${uniqueLevels.size} heading levels used (h${minLevel}–h${maxLevel}), consider simplifying.`,
-        suggestion: "Limit to 3–4 heading levels per page for better scannability.",
+        id: "skipped-heading-level",
+        severity: "medium",
+        message: `Heading level skipped: h${prev} followed by h${curr}.`,
+        selector: headings[i].el.tagName.toLowerCase() + ":nth-of-type(" + (i + 1) + ")",
+        target: headings[i].text.slice(0, 80) || undefined,
+        suggestion: "Use sequential heading levels (h1 → h2 → h3) for proper document structure.",
       });
     }
   }
 
-  for (const h of headingLevels) {
+  const uniqueLevels = new Set(headings.map((h) => h.level));
+  if (uniqueLevels.size > 4) {
+    const maxLevel = Math.max(...headings.map((h) => h.level));
+    const minLevel = Math.min(...headings.map((h) => h.level));
+    findings.push({
+      id: "too-many-heading-levels",
+      severity: "low",
+      message: `${uniqueLevels.size} heading levels used (h${minLevel}–h${maxLevel}), consider simplifying.`,
+      suggestion: "Limit to 3–4 heading levels per page for better scannability.",
+    });
+  }
+
+  for (const h of headings) {
     if (h.text.length === 0) {
       findings.push({
         id: "empty-heading",
@@ -109,88 +149,95 @@ const designAuditScript = (): DesignFinding[] => {
     }
   }
 
-  // ── Typography Scale ──
+  return findings;
+}
+
+function checkTypographyScale(
+  headings: { el: Element; level: number; text: string }[],
+  bodyFontSize: number,
+): DesignFinding[] {
+  const findings: DesignFinding[] = [];
+  if (bodyFontSize <= 0 || headings.length === 0) return findings;
 
   const computedStyles = new Map<Element, CSSStyleDeclaration>();
-  for (const h of headingLevels) {
+  for (const h of headings) {
     computedStyles.set(h.el, getComputedStyle(h.el));
   }
 
-  const bodyStyle = getComputedStyle(document.body);
-  const bodyFontSize = parseFloat(bodyStyle.fontSize);
-
-  if (bodyFontSize > 0 && headingLevels.length > 0) {
-    const h1s = headingLevels.filter((h) => h.level === 1);
-    const h2s = headingLevels.filter((h) => h.level === 2);
-    const h3s = headingLevels.filter((h) => h.level === 3);
-
-    for (const h1 of h1s) {
-      const style = computedStyles.get(h1.el);
-      if (!style) continue;
-      const h1Size = parseFloat(style.fontSize);
-      if (h1Size > 0 && h1Size < bodyFontSize * 1.2) {
-        findings.push({
-          id: "heading-scale-too-flat",
-          severity: "medium",
-          message: `H1 font size (${h1Size.toFixed(1)}px) is less than 1.2× body text (${bodyFontSize.toFixed(1)}px), creating weak visual hierarchy.`,
-          selector: buildSelector(h1.el),
-          suggestion: "Increase H1 size to at least 1.5× body text for clear hierarchy.",
-        });
-      }
-    }
-
-    const levelGroups: Record<number, typeof headingLevels> = {};
-    for (const h of headingLevels) {
-      if (!levelGroups[h.level]) levelGroups[h.level] = [];
-      levelGroups[h.level].push(h);
-    }
-
-    const levelAvgSize: Record<number, number> = {};
-    for (const [level, items] of Object.entries(levelGroups)) {
-      const sizes = items.map((h) => {
-        const style = computedStyles.get(h.el);
-        return style ? parseFloat(style.fontSize) : 0;
-      }).filter((s) => s > 0);
-      if (sizes.length > 0) {
-        levelAvgSize[Number(level)] = sizes.reduce((a, b) => a + b, 0) / sizes.length;
-      }
-    }
-
-    const sortedLevels = Object.keys(levelAvgSize).map(Number).sort((a, b) => a - b);
-    for (let i = 0; i < sortedLevels.length - 1; i++) {
-      const curr = sortedLevels[i];
-      const next = sortedLevels[i + 1];
-      const currSize = levelAvgSize[curr];
-      const nextSize = levelAvgSize[next];
-      if (currSize <= 0 || nextSize <= 0) continue;
-
-      if (nextSize > currSize) {
-        findings.push({
-          id: "broken-typographic-scale",
-          severity: "high",
-          message: `h${next} (${nextSize.toFixed(1)}px) is larger than h${curr} (${currSize.toFixed(1)}px), breaking typographic scale.`,
-          suggestion: "Ensure heading sizes decrease with heading level (H1 > H2 > H3...).",
-        });
-      }
-
-      const diff = Math.abs(currSize - nextSize);
-      if (diff < 2 && diff > 0) {
-        findings.push({
-          id: "heading-size-too-similar",
-          severity: "low",
-          message: `h${curr} (${currSize.toFixed(1)}px) and h${next} (${nextSize.toFixed(1)}px) are less than 2px apart — hard to distinguish.`,
-          suggestion: "Increase the size gap between adjacent heading levels to at least 2–4px.",
-        });
-      }
+  const h1s = headings.filter((h) => h.level === 1);
+  for (const h1 of h1s) {
+    const style = computedStyles.get(h1.el);
+    if (!style) continue;
+    const h1Size = Number.parseFloat(style.fontSize);
+    if (h1Size > 0 && h1Size < bodyFontSize * 1.2) {
+      findings.push({
+        id: "heading-scale-too-flat",
+        severity: "medium",
+        message: `H1 font size (${h1Size.toFixed(1)}px) is less than 1.2× body text (${bodyFontSize.toFixed(1)}px), creating weak visual hierarchy.`,
+        selector: buildSelector(h1.el),
+        suggestion: "Increase H1 size to at least 1.5× body text for clear hierarchy.",
+      });
     }
   }
 
-  // ── Typography ──
+  const levelGroups: Record<number, typeof headings> = {};
+  for (const h of headings) {
+    if (!levelGroups[h.level]) levelGroups[h.level] = [];
+    levelGroups[h.level].push(h);
+  }
+
+  const levelAvgSize: Record<number, number> = {};
+  for (const [level, items] of Object.entries(levelGroups)) {
+    const sizes = items.map((h) => {
+      const style = computedStyles.get(h.el);
+      return style ? Number.parseFloat(style.fontSize) : 0;
+    }).filter((s) => s > 0);
+    if (sizes.length > 0) {
+      levelAvgSize[Number(level)] = sizes.reduce((a, b) => a + b, 0) / sizes.length;
+    }
+  }
+
+  const sortedLevels = Object.keys(levelAvgSize).map(Number).sort((a, b) => a - b);
+  for (let i = 0; i < sortedLevels.length - 1; i++) {
+    const curr = sortedLevels[i];
+    const next = sortedLevels[i + 1];
+    const currSize = levelAvgSize[curr];
+    const nextSize = levelAvgSize[next];
+    if (currSize <= 0 || nextSize <= 0) continue;
+
+    if (nextSize > currSize) {
+      findings.push({
+        id: "broken-typographic-scale",
+        severity: "high",
+        message: `h${next} (${nextSize.toFixed(1)}px) is larger than h${curr} (${currSize.toFixed(1)}px), breaking typographic scale.`,
+        suggestion: "Ensure heading sizes decrease with heading level (H1 > H2 > H3...).",
+      });
+    }
+
+    const diff = Math.abs(currSize - nextSize);
+    if (diff < 2 && diff > 0) {
+      findings.push({
+        id: "heading-size-too-similar",
+        severity: "low",
+        message: `h${curr} (${currSize.toFixed(1)}px) and h${next} (${nextSize.toFixed(1)}px) are less than 2px apart — hard to distinguish.`,
+        suggestion: "Increase the size gap between adjacent heading levels to at least 2–4px.",
+      });
+    }
+  }
+
+  return findings;
+}
+
+function checkTypography(
+  allElements: Element[],
+  paragraphs: Element[],
+  bodyFontSize: number,
+): DesignFinding[] {
+  const findings: DesignFinding[] = [];
 
   const fontFamilies = new Set<string>();
   for (const el of allElements) {
-    const style = getComputedStyle(el);
-    const family = style.fontFamily.split(",")[0].trim().replace(/['"]/g, "");
+    const family = getComputedStyle(el).fontFamily.split(",")[0].trim().replace(/['"]/g, "");
     if (family) fontFamilies.add(family);
   }
   if (fontFamilies.size > 4) {
@@ -205,11 +252,10 @@ const designAuditScript = (): DesignFinding[] => {
   let smallTextCount = 0;
   let smallTextExample: Element | null = null;
   for (const el of allElements) {
-    const style = getComputedStyle(el);
-    const fontSize = parseFloat(style.fontSize);
+    const fontSize = Number.parseFloat(getComputedStyle(el).fontSize);
     if (fontSize > 0 && fontSize < 10) {
       smallTextCount++;
-      if (!smallTextExample) smallTextExample = el;
+      smallTextExample ??= el;
     }
   }
   if (smallTextCount > 0) {
@@ -222,18 +268,17 @@ const designAuditScript = (): DesignFinding[] => {
     });
   }
 
-  const paragraphs = Array.from(document.querySelectorAll("p, li, td, span"));
   let lowLineHeightCount = 0;
   let lowLineHeightExample: Element | null = null;
   for (const p of paragraphs) {
     const style = getComputedStyle(p);
-    const lineHeight = parseFloat(style.lineHeight);
-    const fontSize = parseFloat(style.fontSize);
+    const lineHeight = Number.parseFloat(style.lineHeight);
+    const fontSize = Number.parseFloat(style.fontSize);
     if (fontSize > 0 && lineHeight > 0) {
       const ratio = lineHeight / fontSize;
       if (ratio < 1.2) {
         lowLineHeightCount++;
-        if (!lowLineHeightExample) lowLineHeightExample = p;
+        lowLineHeightExample ??= p;
       }
     }
   }
@@ -248,7 +293,8 @@ const designAuditScript = (): DesignFinding[] => {
   }
 
   for (const p of paragraphs) {
-    if ((p as HTMLElement).textContent && (p as HTMLElement).textContent!.length > 200) {
+    const text = (p as HTMLElement).textContent?.trim() ?? "";
+    if (text.length > 200) {
       const rect = (p as HTMLElement).getBoundingClientRect();
       if (rect.width > 900) {
         findings.push({
@@ -263,9 +309,82 @@ const designAuditScript = (): DesignFinding[] => {
     }
   }
 
-  // ── Color Contrast ──
+  for (const el of allElements) {
+    const tag = el.tagName.toLowerCase();
+    if (!["p", "span", "div", "li", "td"].includes(tag)) continue;
+    const style = getComputedStyle(el);
+    const fontSize = Number.parseFloat(style.fontSize);
+    const fontWeight = Number.parseInt(style.fontWeight, 10);
+    const elText = (el as HTMLElement).textContent?.trim() ?? "";
+    if (elText.length === 0 || elText.length > 120) continue;
 
-  const contrastElements = Array.from(document.querySelectorAll("p, span, a, li, h1, h2, h3, h4, h5, h6, label, button, td, th, div"));
+    const isBold = fontWeight >= 600;
+    const isBig = fontSize > bodyFontSize * 1.2;
+    const isHeading = Array.from(el.children).some(
+      (child) => /^H[1-6]$/.test((child as Element).tagName),
+    );
+    if (isHeading) continue;
+
+    if (isBig && isBold) {
+      const parentHeading = el.parentElement ? /^H[1-6]$/.test(el.parentElement.tagName) : false;
+      if (!parentHeading) {
+        findings.push({
+          id: "text-disguised-as-heading",
+          severity: "low",
+          message: `Styled as heading (${fontSize.toFixed(1)}px, bold) but uses <${tag}> instead of a heading element.`,
+          selector: buildSelector(el),
+          target: elText.slice(0, 60),
+          suggestion: "Use semantic heading tags (h1–h6) instead of styled non-heading elements.",
+        });
+        break;
+      }
+    }
+  }
+
+  return findings;
+}
+
+type Rgb = { r: number; g: number; b: number; a: number };
+
+function parseRgb(color: string): Rgb | null {
+  const regex = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)/;
+  const match = regex.exec(color);
+  if (!match) return null;
+  return {
+    r: Number.parseInt(match[1], 10),
+    g: Number.parseInt(match[2], 10),
+    b: Number.parseInt(match[3], 10),
+    a: match[4] !== undefined ? Number.parseFloat(match[4]) : 1,
+  };
+}
+
+function luminance(r: number, g: number, b: number): number {
+  const [rs, gs, bs] = [r, g, b].map((c) => {
+    const normalized = c / 255;
+    return normalized <= 0.03928 ? normalized / 12.92 : Math.pow((normalized + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+}
+
+function contrastRatio(fg: Rgb, bg: Rgb): number {
+  const blendedFg = {
+    r: Math.round(fg.r * fg.a + bg.r * (1 - fg.a)),
+    g: Math.round(fg.g * fg.a + bg.g * (1 - fg.a)),
+    b: Math.round(fg.b * fg.a + bg.b * (1 - fg.a)),
+  };
+  const l1 = luminance(blendedFg.r, blendedFg.g, blendedFg.b);
+  const l2 = luminance(bg.r, bg.g, bg.b);
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function checkColorContrast(): DesignFinding[] {
+  const findings: DesignFinding[] = [];
+  const contrastElements = Array.from(
+    document.querySelectorAll("p, span, a, li, h1, h2, h3, h4, h5, h6, label, button, td, th, div"),
+  );
+
   let lowContrastCount = 0;
   const lowContrastExamples: { selector: string; ratio: number; target?: string }[] = [];
 
@@ -279,12 +398,11 @@ const designAuditScript = (): DesignFinding[] => {
     const fgRgb = parseRgb(fg);
     const bgRgb = parseRgb(bg);
     if (!fgRgb || !bgRgb) continue;
-
     if (bgRgb.a === 0) continue;
 
     const ratio = contrastRatio(fgRgb, bgRgb);
-    const fontSize = parseFloat(style.fontSize);
-    const fontWeight = parseInt(style.fontWeight, 10);
+    const fontSize = Number.parseFloat(style.fontSize);
+    const fontWeight = Number.parseInt(style.fontWeight, 10);
     const isLargeText = fontSize >= 18 || (fontSize >= 14 && fontWeight >= 700);
 
     const threshold = isLargeText ? 3 : 4.5;
@@ -306,7 +424,7 @@ const designAuditScript = (): DesignFinding[] => {
     findings.push({
       id: "low-contrast-text",
       severity: "high",
-      message: `${lowContrastCount} element(s) with insufficient color contrast (below ${lowContrastExamples.length > 0 ? "e.g. " + lowContrastExamples[0].ratio + ":1" : "WCAG threshold"}).`,
+      message: `${lowContrastCount} element(s) with insufficient color contrast (below ${lowContrastExamples.length > 0 ? `e.g. ${lowContrastExamples[0].ratio}:1` : "WCAG threshold"}).`,
       selector: example?.selector,
       target: example?.target,
       suggestion: "Increase contrast ratio to at least 4.5:1 for normal text or 3:1 for large text.",
@@ -323,16 +441,22 @@ const designAuditScript = (): DesignFinding[] => {
     }
   }
 
-  // ── Touch & Interaction ──
+  return findings;
+}
 
-  const interactiveElements = Array.from(document.querySelectorAll("a, button, [role='button'], input[type='submit'], input[type='button'], input[type='reset'], select"));
+function checkTouchAndInteraction(): DesignFinding[] {
+  const findings: DesignFinding[] = [];
+
+  const interactiveSelector = "a, button, [role='button'], input[type='submit'], input[type='button'], input[type='reset'], select";
+  const interactiveElements = Array.from(document.querySelectorAll(interactiveSelector));
+
   let smallTouchTargets = 0;
   let smallTouchExample: Element | null = null;
   for (const el of interactiveElements) {
     const rect = (el as HTMLElement).getBoundingClientRect();
     if (rect.width > 0 && rect.height > 0 && (rect.width < 44 || rect.height < 44)) {
       smallTouchTargets++;
-      if (!smallTouchExample) smallTouchExample = el;
+      smallTouchExample ??= el;
     }
   }
   if (smallTouchTargets > 0) {
@@ -352,13 +476,13 @@ const designAuditScript = (): DesignFinding[] => {
     if ((el as HTMLElement).offsetParent === null) continue;
     const style = getComputedStyle(el);
     const outlineStyle = style.outlineStyle;
-    const outlineWidth = parseFloat(style.outlineWidth);
+    const outlineWidth = Number.parseFloat(style.outlineWidth);
     const boxShadow = style.boxShadow;
     const hasOutline = outlineStyle !== "none" && outlineWidth > 0;
     const hasBoxShadow = boxShadow !== "none" && boxShadow !== "";
     if (!hasOutline && !hasBoxShadow) {
       missingFocusStyles++;
-      if (!focusExample) focusExample = el;
+      focusExample ??= el;
     }
   }
   if (missingFocusStyles > 0) {
@@ -371,10 +495,16 @@ const designAuditScript = (): DesignFinding[] => {
     });
   }
 
-  // ── Responsive & Layout ──
+  return findings;
+}
+
+function checkResponsiveLayout(
+  headings: { el: Element; level: number; text: string }[],
+): DesignFinding[] {
+  const findings: DesignFinding[] = [];
 
   const viewportMeta = document.querySelector('meta[name="viewport"]');
-  if (!viewportMeta) {
+  if (viewportMeta === null) {
     findings.push({
       id: "missing-viewport-meta",
       severity: "high",
@@ -402,7 +532,7 @@ const designAuditScript = (): DesignFinding[] => {
     });
   }
 
-  for (const h of headingLevels) {
+  for (const h of headings) {
     if (h.text.length > 70) {
       findings.push({
         id: "heading-too-long",
@@ -414,43 +544,6 @@ const designAuditScript = (): DesignFinding[] => {
       });
     }
   }
-
-  // ── Text Disguised as Headings ──
-
-  for (const el of allElements) {
-    const tag = el.tagName.toLowerCase();
-    if (["p", "span", "div", "li", "td"].includes(tag)) {
-      const style = getComputedStyle(el);
-      const fontSize = parseFloat(style.fontSize);
-      const fontWeight = parseInt(style.fontWeight, 10);
-      const text = (el as HTMLElement).textContent?.trim() ?? "";
-      if (text.length === 0 || text.length > 120) continue;
-
-      const isBold = fontWeight >= 600;
-      const isBig = fontSize > bodyFontSize * 1.2;
-      const isHeading = Array.from(el.children).some(
-        (child) => /^H[1-6]$/.test((child as Element).tagName),
-      );
-      if (isHeading) continue;
-
-      if (isBig && isBold) {
-        const parentHeading = el.parentElement && /^H[1-6]$/.test(el.parentElement.tagName);
-        if (!parentHeading) {
-          findings.push({
-            id: "text-disguised-as-heading",
-            severity: "low",
-            message: `Styled as heading (${fontSize.toFixed(1)}px, bold) but uses <${tag}> instead of a heading element.`,
-            selector: buildSelector(el),
-            target: text.slice(0, 60),
-            suggestion: "Use semantic heading tags (h1–h6) instead of styled non-heading elements.",
-          });
-          break;
-        }
-      }
-    }
-  }
-
-  // ── Large Text Walls ──
 
   for (const el of Array.from(document.querySelectorAll("p"))) {
     const text = (el as HTMLElement).textContent?.trim() ?? "";
@@ -473,65 +566,4 @@ const designAuditScript = (): DesignFinding[] => {
   }
 
   return findings;
-
-  function buildSelector(el: Element): string {
-    const path: string[] = [];
-    let current: Element | null = el;
-    while (current && current !== document.body && current !== document.documentElement) {
-      let selector = current.tagName.toLowerCase();
-      if (current.id) {
-        selector = `#${current.id}`;
-        path.unshift(selector);
-        break;
-      }
-      const parent = current.parentElement;
-      if (parent) {
-        const siblings = Array.from(parent.children).filter(
-          (c) => c.tagName === current!.tagName,
-        );
-        if (siblings.length > 1) {
-          const index = siblings.indexOf(current) + 1;
-          selector += `:nth-of-type(${index})`;
-        }
-      }
-      path.unshift(selector);
-      current = current.parentElement;
-    }
-    return path.join(" > ");
-  }
-
-  function parseRgb(color: string): { r: number; g: number; b: number; a: number } | null {
-    const match = color.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)/);
-    if (!match) return null;
-    return {
-      r: parseInt(match[1], 10),
-      g: parseInt(match[2], 10),
-      b: parseInt(match[3], 10),
-      a: match[4] !== undefined ? parseFloat(match[4]) : 1,
-    };
-  }
-
-  function luminance(r: number, g: number, b: number): number {
-    const [rs, gs, bs] = [r, g, b].map((c) => {
-      c = c / 255;
-      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-    });
-    return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
-  }
-
-  function contrastRatio(
-    fg: { r: number; g: number; b: number; a: number },
-    bg: { r: number; g: number; b: number; a: number },
-  ): number {
-    const blendedFg = {
-      r: Math.round(fg.r * fg.a + bg.r * (1 - fg.a)),
-      g: Math.round(fg.g * fg.a + bg.g * (1 - fg.a)),
-      b: Math.round(fg.b * fg.a + bg.b * (1 - fg.a)),
-    };
-    const l1 = luminance(blendedFg.r, blendedFg.g, blendedFg.b);
-    const l2 = luminance(bg.r, bg.g, bg.b);
-    const lighter = Math.max(l1, l2);
-    const darker = Math.min(l1, l2);
-    return (lighter + 0.05) / (darker + 0.05);
-  }
-};
+}
