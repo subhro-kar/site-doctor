@@ -1,4 +1,4 @@
-import type { AuditResult, Issue } from "../types.js";
+import type { AuditResult, Issue, Severity, Category } from "../types.js";
 
 const severityColor: Record<Issue["severity"], string> = {
   info: "\x1b[34m", // blue
@@ -10,7 +10,27 @@ const severityColor: Record<Issue["severity"], string> = {
 
 const reset = "\x1b[0m";
 
-export function printTerminalReport(result: AuditResult): void {
+export type ReportFilterOptions = {
+  severity?: Severity[];
+  category?: Category[];
+};
+
+export function printTerminalReport(
+  result: AuditResult,
+  options?: ReportFilterOptions,
+): void {
+  let issues = result.issues;
+
+  if (options?.severity?.length) {
+    const severitySet = new Set(options.severity);
+    issues = issues.filter((i) => severitySet.has(i.severity));
+  }
+
+  if (options?.category?.length) {
+    const categorySet = new Set(options.category);
+    issues = issues.filter((i) => categorySet.has(i.category));
+  }
+
   console.log("");
   console.log("═".repeat(60));
   console.log("  site-doctor audit report");
@@ -20,19 +40,19 @@ export function printTerminalReport(result: AuditResult): void {
   console.log(`  Report:     ${result.config.report}`);
   console.log("─".repeat(60));
   console.log(`  Pages crawled: ${result.pagesCrawled}`);
-  console.log(`  Total issues:  ${result.issues.length}`);
+  console.log(`  Total issues:  ${issues.length}${issues.length !== result.issues.length ? ` (filtered from ${result.issues.length})` : ""}`);
   console.log("═".repeat(60));
 
-  if (result.issues.length === 0) {
+  if (issues.length === 0) {
     console.log("\n  No issues found.\n");
     return;
   }
 
-  const grouped = groupBy(result.issues, (issue) => issue.page);
+  const grouped = groupBy(issues, (issue) => issue.page);
 
-  for (const [page, issues] of grouped) {
+  for (const [page, pageIssues] of grouped) {
     console.log(`\n  📄 ${page}`);
-    for (const issue of issues) {
+    for (const issue of pageIssues) {
       const color = severityColor[issue.severity];
       console.log(
         `     ${color}[${issue.severity.toUpperCase()}]${reset} [${issue.category}] ${issue.message}`,

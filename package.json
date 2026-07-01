@@ -74,6 +74,7 @@
   },
   "dependencies": {
     "@axe-core/playwright": "4.10.1",
+    "@clack/prompts": "^1.6.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "commander": "13.1.0",
     "open": "10.2.0",
