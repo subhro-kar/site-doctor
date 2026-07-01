@@ -77,6 +77,11 @@ const CHECK_ALIASES: Record<string, string> = {
   "design": "designIssues",
 };
 
+const VALID_CHECK_KEYS = new Set([
+  "links", "images", "accessibility", "securityHeaders",
+  "consoleErrors", "hydrationErrors", "metadata", "mixedContent", "designIssues",
+]);
+
 function normalizeCheckNames(input: string): string[] {
   return parseCommaList(input).map((name) => {
     const lower = name.toLowerCase();
@@ -101,6 +106,11 @@ function resolveChecks(only?: string, skip?: string): AuditConfig["checks"] | un
 
   if (only) {
     const onlyKeys = new Set(normalizeCheckNames(only));
+    const unknown = [...onlyKeys].filter((k) => !VALID_CHECK_KEYS.has(k));
+    if (unknown.length > 0) {
+      console.error(`Unknown check(s): ${unknown.join(", ")}. Run "site-doctor list-checks" for available options.`);
+      process.exit(1);
+    }
     for (const key of Object.keys(checks) as (keyof typeof checks)[]) {
       if (!onlyKeys.has(key)) checks[key] = false;
     }
@@ -108,6 +118,11 @@ function resolveChecks(only?: string, skip?: string): AuditConfig["checks"] | un
 
   if (skip) {
     const skipKeys = new Set(normalizeCheckNames(skip));
+    const unknown = [...skipKeys].filter((k) => !VALID_CHECK_KEYS.has(k));
+    if (unknown.length > 0) {
+      console.error(`Unknown check(s): ${unknown.join(", ")}. Run "site-doctor list-checks" for available options.`);
+      process.exit(1);
+    }
     for (const key of skipKeys) {
       if (key in checks) (checks as Record<string, boolean>)[key] = false;
     }
@@ -119,7 +134,7 @@ function resolveChecks(only?: string, skip?: string): AuditConfig["checks"] | un
 function filterIssues(issues: AuditResult["issues"], severity?: string, category?: string): AuditResult["issues"] {
   let filtered = issues;
   if (severity) {
-    const severities = new Set(parseCommaList(severity) as Severity[]);
+    const severities = new Set(parseCommaList(severity).map((s) => s.toLowerCase() as Severity));
     filtered = filtered.filter((i) => severities.has(i.severity));
   }
   if (category) {
