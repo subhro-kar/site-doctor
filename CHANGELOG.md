@@ -1,3 +1,10 @@
+## [0.4.1](https://github.com/subhro-kar/site-doctor/compare/v0.4.0...v0.4.1) (2026-07-01)
+
+
+### Bug Fixes
+
+* simplify release pipeline to single job, enable npm publish, remove duplicate github-release job ([0f6e852](https://github.com/subhro-kar/site-doctor/commit/0f6e852405d7e199c89181d415fa24928615a27d))
+
 # [0.4.0](https://github.com/subhro-kar/site-doctor/compare/v0.3.4...v0.4.0) (2026-07-01)
 
 
