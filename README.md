@@ -2,9 +2,15 @@
 
 [![npm version](https://img.shields.io/npm/v/site-doctor.svg)](https://www.npmjs.com/package/site-doctor) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Node.js >=20](https://img.shields.io/badge/node-%3E%3D20-green.svg)](https://nodejs.org/)
 
-Audit rendered websites for broken links, images, accessibility violations, security header gaps, SEO metadata issues, console errors, hydration errors, and mixed content. Works with any URL — localhost, staging, or production.
+Audit rendered websites for broken links, images, accessibility violations, security header gaps, design issues, SEO metadata problems, console errors, hydration errors, and mixed content. Works with any URL — localhost, staging, or production.
 
 **MCP server included** — use site-doctor directly from Claude, Cursor, Windsurf, or any MCP-compatible AI tool.
+
+<!-- TODO: Add screenshots here
+![Interactive mode](./docs/interactive-mode.png)
+![Terminal report](./docs/terminal-report.png)
+![HTML report](./docs/html-report.png)
+-->
 
 ## Install
 
@@ -20,6 +26,18 @@ npx site-doctor audit --url http://localhost:3000
 
 ## CLI Usage
 
+### Interactive mode
+
+Run without `--url` to launch an interactive prompt:
+
+```bash
+site-doctor audit
+```
+
+You'll be guided through selecting a URL, checks, severity filters, and output format.
+
+### One-shot mode
+
 ```bash
 site-doctor audit --url http://localhost:3000
 ```
@@ -28,7 +46,7 @@ site-doctor audit --url http://localhost:3000
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--url <url>` | **Required.** Base URL to audit. | — |
+| `--url <url>` | Base URL to audit. Omit to launch interactive mode. | — |
 | `--max-pages <number>` | Maximum pages to crawl. | `25` |
 | `--report <terminal\|json\|html>` | Output format. | `terminal` |
 | `--output <path>` | Write JSON or HTML report to a file. | — |
@@ -37,13 +55,57 @@ site-doctor audit --url http://localhost:3000
 | `--open-files` | Open source files with critical/high issues in your editor. | `false` |
 | `--project-dir <path>` | Path to project source for source-file links. | — |
 | `--editor <vscode\|cursor\|webstorm>` | Editor for source-file links. | `vscode` |
+| `--only <checks>` | Run only these checks (comma-separated). Mutually exclusive with `--skip`. | — |
+| `--skip <checks>` | Skip these checks (comma-separated). Mutually exclusive with `--only`. | — |
+| `--severity <levels>` | Filter issues by severity (comma-separated: `critical,high,medium,low,info`). | — |
+| `--category <cats>` | Filter issues by category (comma-separated: `links,images,accessibility,security,console,hydration,metadata,mixed-content,design`). | — |
+
+### Check name aliases
+
+`--only` and `--skip` accept both kebab-case and common aliases:
+
+| Check | Aliases |
+|-------|---------|
+| `links` | `links` |
+| `images` | `images` |
+| `accessibility` | `accessibility`, `a11y` |
+| `securityHeaders` | `security-headers`, `securityheaders` |
+| `consoleErrors` | `console-errors`, `consoleerrors` |
+| `hydrationErrors` | `hydration-errors`, `hydrationerrors` |
+| `metadata` | `metadata`, `seo` |
+| `mixedContent` | `mixed-content`, `mixedcontent` |
+| `designIssues` | `design-issues`, `designissues`, `design` |
 
 ### Examples
+
+Interactive audit (prompts for URL, checks, severity, format):
+
+```bash
+site-doctor audit
+```
 
 Terminal report:
 
 ```bash
 site-doctor audit --url http://localhost:3000 --max-pages 10
+```
+
+Run only design and accessibility checks:
+
+```bash
+site-doctor audit --url http://localhost:3000 --only design,a11y
+```
+
+Skip console and hydration checks, show only critical/high issues:
+
+```bash
+site-doctor audit --url http://localhost:3000 --skip console-errors,hydration-errors --severity critical,high
+```
+
+Filter by category and output as JSON:
+
+```bash
+site-doctor audit --url http://localhost:3000 --category design,security --report json --output report.json
 ```
 
 HTML report (auto-opens browser):
@@ -52,16 +114,16 @@ HTML report (auto-opens browser):
 site-doctor audit --url http://localhost:3000 --report html --project-dir ./apps/web
 ```
 
-JSON report written to file:
-
-```bash
-site-doctor audit --url https://example.com --report json --output report.json
-```
-
 Open source files in VSCode for critical/high issues:
 
 ```bash
 site-doctor audit --url http://localhost:3000 --report html --project-dir ./apps/web --open-files
+```
+
+### List available checks
+
+```bash
+site-doctor list-checks
 ```
 
 ## MCP Server
@@ -152,17 +214,18 @@ If installed globally, you can use the binary directly instead of `npx`:
 
 ## Checks
 
-| Check | What it finds |
-|-------|---------------|
-| **Crawl** | Discovers same-origin pages, respects `maxPages`, skips downloads |
-| **Links** | Broken internal/external links, redirect loops, blocked URLs |
-| **Images** | Broken images, missing `alt`, missing dimensions, oversized files, lazy-loaded hero images |
-| **Accessibility** | axe-core WCAG violations — contrast, labels, landmarks, ARIA, heading order |
-| **Security headers** | Missing CSP, HSTS, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, frame protection |
-| **Console errors** | Grouped browser console errors with page context |
-| **Hydration errors** | React / Next.js hydration mismatches |
-| **Metadata** | Missing title, description, canonical, Open Graph image, H1 issues |
-| **Mixed content** | HTTP resources loaded on HTTPS pages |
+| Check | Flag name | What it finds |
+|-------|-----------|---------------|
+| **Crawl** | — | Discovers same-origin pages, respects `maxPages`, skips downloads |
+| **Links** | `links` | Broken internal/external links, redirect loops, blocked URLs |
+| **Images** | `images` | Broken images, missing `alt`, missing dimensions, oversized files, lazy-loaded hero images |
+| **Accessibility** | `accessibility` (`a11y`) | axe-core WCAG violations — contrast, labels, landmarks, ARIA, heading order |
+| **Security headers** | `security-headers` | Missing CSP, HSTS, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, frame protection |
+| **Console errors** | `console-errors` | Grouped browser console errors with page context |
+| **Hydration errors** | `hydration-errors` | React / Next.js hydration mismatches |
+| **Metadata** | `metadata` (`seo`) | Missing title, description, canonical, Open Graph image, H1 issues |
+| **Mixed content** | `mixed-content` | HTTP resources loaded on HTTPS pages |
+| **Design issues** | `design-issues` (`design`) | Heading hierarchy, typography scale & readability, color contrast, touch targets, responsive layout, text walls |
 
 ## Source-file links
 
