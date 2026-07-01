@@ -199,7 +199,7 @@ async function interactiveAudit(options: Record<string, unknown>): Promise<void>
 
   const url = await clack.text({
     message: "What URL do you want to audit?",
-    placeholder: "example.com",
+    placeholder: "http://localhost:3000",
     validate: (value) => {
       if (!value) return "URL is required";
       const withProtocol = /^https?:\/\//i.test(value) ? value : `https://${value}`;
