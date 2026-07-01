@@ -56,7 +56,7 @@ site-doctor audit --url http://localhost:3000
 | `--only <checks>` | Run only these checks (comma-separated). Mutually exclusive with `--skip`. | — |
 | `--skip <checks>` | Skip these checks (comma-separated). Mutually exclusive with `--only`. | — |
 | `--severity <levels>` | Filter issues by severity (comma-separated: `critical,high,medium,low,info`). | — |
-| `--category <cats>` | Filter issues by category (comma-separated: `links,images,accessibility,security,console,hydration,metadata,mixed-content,design`). | — |
+| `--category <cats>` | Filter issues by category (comma-separated: `links,images,accessibility,security,console,hydration,metadata,mixed-content,design,performance`). | — |
 
 ### Check name aliases
 
@@ -73,6 +73,7 @@ site-doctor audit --url http://localhost:3000
 | `metadata` | `metadata`, `seo` |
 | `mixedContent` | `mixed-content`, `mixedcontent` |
 | `designIssues` | `design-issues`, `designissues`, `design` |
+| `performance` | `performance`, `perf` |
 
 ### Examples
 
@@ -224,6 +225,7 @@ If installed globally, you can use the binary directly instead of `npx`:
 | **Metadata** | `metadata` (`seo`) | Missing title, description, canonical, Open Graph image, H1 issues |
 | **Mixed content** | `mixed-content` | HTTP resources loaded on HTTPS pages |
 | **Design issues** | `design-issues` (`design`) | Heading hierarchy, typography scale & readability, color contrast, touch targets, responsive layout, text walls |
+| **Performance** | `performance` (`perf`) | LCP, CLS, INP, render-blocking resources, JS/CSS bundle size, DOM size, compression, third-party hosts |
 
 ## Source-file links
 

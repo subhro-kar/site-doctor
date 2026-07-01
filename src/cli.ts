@@ -23,6 +23,7 @@ const ALL_CHECKS = [
   { key: "metadata" as const, label: "Metadata", description: "Check for missing SEO metadata" },
   { key: "mixedContent" as const, label: "Mixed Content", description: "Detect HTTP resources on HTTPS pages" },
   { key: "designIssues" as const, label: "Design Issues", description: "Typography, headings, contrast, touch targets, layout" },
+  { key: "performance" as const, label: "Performance", description: "LCP, CLS, INP, render-blocking resources, bundle size" },
 ];
 
 const SEVERITY_LEVELS: Severity[] = ["critical", "high", "medium", "low", "info"];
@@ -44,6 +45,8 @@ const CATEGORY_ALIASES: Record<string, Category> = {
   "mixedcontent": "mixed-content",
   "design": "design",
   "design-issues": "design",
+  "performance": "performance",
+  "perf": "performance",
 };
 
 function normalizeCategoryNames(input: string): Category[] {
@@ -75,11 +78,13 @@ const CHECK_ALIASES: Record<string, string> = {
   "design-issues": "designIssues",
   "designissues": "designIssues",
   "design": "designIssues",
+  "performance": "performance",
+  "perf": "performance",
 };
 
 const VALID_CHECK_KEYS = new Set([
   "links", "images", "accessibility", "securityHeaders",
-  "consoleErrors", "hydrationErrors", "metadata", "mixedContent", "designIssues",
+  "consoleErrors", "hydrationErrors", "metadata", "mixedContent", "designIssues", "performance",
 ]);
 
 function normalizeCheckNames(input: string): string[] {
@@ -102,6 +107,7 @@ function resolveChecks(only?: string, skip?: string): AuditConfig["checks"] | un
     metadata: true,
     mixedContent: true,
     designIssues: true,
+    performance: true,
   };
 
   if (only) {
@@ -153,7 +159,7 @@ program
 
 program
   .command("audit")
-  .description("Audit a website by crawling its pages.")
+  .description("Audit a website by crawling its pages. Checks links, images, a11y, security, console errors, hydration, metadata, mixed content, design, and performance.")
   .option("--url <url>", "Base URL to audit (e.g. http://localhost:3000)")
   .option("--max-pages <number>", "Maximum pages to crawl", "25")
   .option("--report <format>", "Output format: terminal, json, html", "terminal")
@@ -166,7 +172,7 @@ program
   .option("--only <checks>", "Run only these checks (comma-separated, e.g. links,design-issues)")
   .option("--skip <checks>", "Skip these checks (comma-separated, e.g. accessibility,console-errors)")
   .option("--severity <levels>", "Filter issues by severity (comma-separated: critical,high,medium,low,info)")
-  .option("--category <cats>", "Filter issues by category (comma-separated: links,images,accessibility,security,console,hydration,metadata,mixed-content,design)")
+  .option("--category <cats>", "Filter issues by category (comma-separated: links,images,accessibility,security,console,hydration,metadata,mixed-content,design,performance)")
   .action(async (options) => {
     try {
       const url = options.url;
@@ -306,6 +312,7 @@ async function interactiveAudit(options: Record<string, unknown>): Promise<void>
     metadata: (selectedChecks as string[]).includes("metadata"),
     mixedContent: (selectedChecks as string[]).includes("mixedContent"),
     designIssues: (selectedChecks as string[]).includes("designIssues"),
+    performance: (selectedChecks as string[]).includes("performance"),
   };
 
   const checkNames = ALL_CHECKS
