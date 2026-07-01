@@ -199,14 +199,15 @@ async function interactiveAudit(options: Record<string, unknown>): Promise<void>
 
   const url = await clack.text({
     message: "What URL do you want to audit?",
-    placeholder: "http://localhost:3000",
+    placeholder: "subhbits.com",
     validate: (value) => {
       if (!value) return "URL is required";
+      const withProtocol = /^https?:\/\//i.test(value) ? value : `https://${value}`;
       try {
-        new URL(value);
+        new URL(withProtocol);
         return;
       } catch {
-        return "Please enter a valid URL (e.g. http://localhost:3000)";
+        return "Please enter a valid URL (e.g. subhbits.com or http://localhost:3000)";
       }
     },
   });
@@ -215,6 +216,8 @@ async function interactiveAudit(options: Record<string, unknown>): Promise<void>
     clack.cancel("Audit cancelled.");
     process.exit(0);
   }
+
+  const normalizedUrl: string = /^https?:\/\//i.test(url as string) ? (url as string) : `https://${url}`;
 
   const maxPages = await clack.text({
     message: "How many pages to crawl?",
@@ -295,10 +298,10 @@ async function interactiveAudit(options: Record<string, unknown>): Promise<void>
     .map((c) => c.label)
     .join(", ");
 
-  clack.log.info(`Auditing ${url} (${checkNames}, max ${maxPages} pages)...`);
+  clack.log.info(`Auditing ${normalizedUrl} (${checkNames}, max ${maxPages} pages)...`);
 
   const config = buildConfig({
-    url: url as string,
+    url: normalizedUrl,
     maxPages: Number(maxPages),
     report: reportFormat as "terminal" | "json" | "html",
     checks,
