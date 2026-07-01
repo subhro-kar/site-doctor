@@ -9,7 +9,8 @@ export type Category =
   | "hydration"
   | "metadata"
   | "mixed-content"
-  | "performance";
+  | "performance"
+  | "design";
 
 export type Issue = {
   id: string;
@@ -35,6 +36,7 @@ export type AuditConfig = {
     hydrationErrors: boolean;
     metadata: boolean;
     mixedContent: boolean;
+    designIssues: boolean;
   };
 };
 
