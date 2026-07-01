@@ -78,8 +78,8 @@
     "@modelcontextprotocol/sdk": "^1.29.0",
     "commander": "13.1.0",
     "open": "10.2.0",
-    "playwright": "1.52.0",
-    "undici": "7.8.0",
+    "playwright": "1.55.1",
+    "undici": "7.28.0",
     "zod": "3.25.73"
   },
   "devDependencies": {
