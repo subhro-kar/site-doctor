@@ -8,6 +8,7 @@ import { checkConsoleErrors } from "./console-errors.js";
 import { checkHydrationErrors } from "./hydration-errors.js";
 import { checkMetadata } from "./metadata.js";
 import { checkMixedContent } from "./mixed-content.js";
+import { checkDesignIssues } from "./design-issues.js";
 import { isBrowserNotInstalledError, installBrowsers } from "../utils/browser.js";
 import type { AuditConfig, AuditResult, Issue, PageData } from "../types.js";
 
@@ -68,6 +69,7 @@ export async function runAudit(
       checkHydrationErrors(pages, config),
       checkMetadata(pages, config),
       checkMixedContent(pages, config),
+      checkDesignIssues(pages, config, getPage, closePage),
     ]);
 
     const issues = deduplicateIssues(issueGroups.flat());

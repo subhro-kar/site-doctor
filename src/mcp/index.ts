@@ -10,7 +10,7 @@ const server = new McpServer({
 
 server.tool(
   "audit",
-  "Audit a website for broken links, images, accessibility issues, security headers, console errors, hydration errors, SEO metadata, and mixed content. Returns a summary of all issues found grouped by severity.",
+  "Audit a website for broken links, images, accessibility issues, security headers, console errors, hydration errors, SEO metadata, mixed content, and design issues. Returns a summary of all issues found grouped by severity.",
   auditToolSchema,
   handleAudit,
 );

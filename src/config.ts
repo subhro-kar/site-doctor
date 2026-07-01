@@ -22,6 +22,7 @@ const auditOptionsSchema = z.object({
       hydrationErrors: z.boolean().default(true),
       metadata: z.boolean().default(true),
       mixedContent: z.boolean().default(true),
+      designIssues: z.boolean().default(true),
     })
     .default({}),
 });
