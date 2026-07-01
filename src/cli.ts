@@ -255,6 +255,7 @@ async function interactiveAudit(options: Record<string, unknown>): Promise<void>
       label: s.charAt(0).toUpperCase() + s.slice(1),
     })),
     initialValues: [],
+    required: false,
   });
 
   if (clack.isCancel(selectedSeverities)) {
