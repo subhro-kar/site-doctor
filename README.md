@@ -6,11 +6,9 @@ Audit rendered websites for broken links, images, accessibility violations, secu
 
 **MCP server included** — use site-doctor directly from Claude, Cursor, Windsurf, or any MCP-compatible AI tool.
 
-<!-- TODO: Add screenshots here
-![Interactive mode](./docs/interactive-mode.png)
-![Terminal report](./docs/terminal-report.png)
-![HTML report](./docs/html-report.png)
--->
+![Interactive mode](./assets/interactive-mode.png)
+![Terminal report](./assets/terminal-report.png)
+![HTML report](./assets/html-output.png)
 
 ## Install
 
