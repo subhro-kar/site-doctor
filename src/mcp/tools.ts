@@ -15,7 +15,7 @@ export const auditToolSchema = {
     hydrationErrors: z.boolean().default(true).describe("Check for React/Next.js hydration errors"),
     metadata: z.boolean().default(true).describe("Check for missing SEO metadata"),
     mixedContent: z.boolean().default(true).describe("Check for mixed content (HTTP on HTTPS pages)"),
-    designIssues: z.boolean().default(true).describe("Check for design issues (typography, heading hierarchy, color contrast, touch targets, responsive layout)"),
+    designIssues: z.boolean().default(true).describe("Check for design issues: heading hierarchy, typography scale, color contrast, touch targets, focus styles, viewport, overflow, text walls"),
   }).default({}).describe("Which audit checks to run. All default to true."),
 };
 
@@ -113,7 +113,7 @@ export async function handleListChecks() {
     { name: "hydrationErrors", description: "Detects React/Next.js hydration mismatch errors" },
     { name: "metadata", description: "Checks for missing SEO metadata (title, description, canonical, OG image, H1)" },
     { name: "mixedContent", description: "Detects HTTP resources loaded on HTTPS pages" },
-    { name: "designIssues", description: "Checks for design issues: typography scale, heading hierarchy, color contrast, touch targets, responsive layout, and UX principle violations" },
+    { name: "designIssues", description: "Checks for design issues: heading hierarchy, typography scale, color contrast, touch targets, focus styles, viewport meta, overflow, and text readability" },
   ];
 
   let output = `## Available Audit Checks\n\n`;
